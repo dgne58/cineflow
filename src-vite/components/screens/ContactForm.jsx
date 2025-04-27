@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   BookmarkIcon,
   CopyIcon,
@@ -19,10 +19,18 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
+import axios from "axios";
 
 export const ContactForm = () => {
   const [duration, setDuration] = useState(5);
   const [uploadedFiles, setUploadedFiles] = useState({ video1: null, video2: null });
+  const [aspectRatio, setAspectRatio] = useState("Vertical 9:16");
+  const [resolution, setResolution] = useState("1080p");
+  const [prompt, setPrompt] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [videoUrl, setVideoUrl] = useState(null);
+  const videoRef = useRef(null);
+
   const videoUploadCards = [
     { id: 1, label: "Video 1" },
     { id: 2, label: "Video 2" },
@@ -36,9 +44,57 @@ export const ContactForm = () => {
     { icon: <MoreHorizontalIcon className="w-4 h-4" />, alt: "More" },
   ];
 
-  const [aspectRatio, setAspectRatio] = useState("Vertical 9:16");
-  const [resolution, setResolution] = useState("1080p");
+  const handleUploadChange = (e, videoKey) => {
+    const file = e.target.files[0];
+    if (file) {
+      const validTypes = ["video/mp4", "video/quicktime"];
+      if (validTypes.includes(file.type)) {
+        setUploadedFiles((prev) => ({ ...prev, [videoKey]: file }));
+      } else {
+        alert("Invalid file type. Please upload .mov or .mp4 files.");
+      }
+    }
+  };
 
+  const handleSendToMoon = async () => {
+    if (!uploadedFiles.video1 || !uploadedFiles.video2) {
+      alert("Please upload both files!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file1', uploadedFiles.video1);
+    formData.append('file2', uploadedFiles.video2);
+    formData.append('duration', duration);
+    formData.append('aspectRatio', aspectRatio);
+    formData.append('resolution', resolution);
+    formData.append('prompt', prompt);
+
+    try {
+      setLoading(true);
+      setVideoUrl(null);
+
+      // ContactForm.jsx
+      const response = await axios.post(
+        'http://localhost:3001/upload',
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+
+
+      setVideoUrl(response.data.videoUrl);
+      setLoading(false);
+
+      if (videoRef.current) {
+        videoRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+      alert("Upload or generation failed. Please try again.");
+    }
+  };
 
   return (
     <main className="relative w-full max-w-[350px] min-h-screen bg-[#090c17] overflow-hidden flex flex-col items-center p-4">
@@ -69,7 +125,12 @@ export const ContactForm = () => {
               </p>
             </div>
 
-            <Textarea placeholder="Prompt" className="bg-white/10 border border-white/20 text-white rounded-md p-3" />
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Prompt"
+              className="bg-white/10 border border-white/20 text-white rounded-md p-3"
+            />
 
             <div className="text-left">
               <p className="text-xs text-white">Duration: sec.00:{duration < 10 ? `0${duration}` : duration}</p>
@@ -85,7 +146,6 @@ export const ContactForm = () => {
             </div>
 
             <div className="flex gap-2">
-              {/* Aspect Ratio Dropdown */}
               <Select value={aspectRatio} onValueChange={setAspectRatio}>
                 <SelectTrigger className="w-full bg-white/10 text-white border border-white/20">
                   <SelectValue>{aspectRatio}</SelectValue>
@@ -99,7 +159,6 @@ export const ContactForm = () => {
                 </SelectContent>
               </Select>
 
-              {/* Resolution Dropdown */}
               <Select value={resolution} onValueChange={setResolution}>
                 <SelectTrigger className="w-full bg-white/10 text-white border border-white/20">
                   <SelectValue>{resolution}</SelectValue>
@@ -112,7 +171,6 @@ export const ContactForm = () => {
               </Select>
             </div>
 
-
             <div className="flex flex-col gap-4">
               {videoUploadCards.map((video) => (
                 <label key={video.id} className="relative w-full bg-white/10 p-6 text-center border border-white/20 rounded-lg cursor-pointer overflow-hidden">
@@ -124,7 +182,6 @@ export const ContactForm = () => {
                         </svg>
                         <p className="text-sm text-white opacity-70">Uploaded Successfully!</p>
                       </div>
-
                     ) : (
                       <>
                         <UploadIcon className="w-5 h-5 text-[#ffffff99]" />
@@ -132,58 +189,36 @@ export const ContactForm = () => {
                       </>
                     )}
                   </CardContent>
-
-                  {/* This makes input fully invisible and 100% clickable */}
                   <input
                     type="file"
                     accept=".png,.jpg,.mov,.mp4"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const validTypes = ["image/png", "image/jpeg", "video/mp4", "video/quicktime"];
-                        if (validTypes.includes(file.type)) {
-                          setUploadedFiles((prev) => ({ ...prev, [`video${video.id}`]: file }));
-                        } else {
-                          alert("Invalid file type. Please upload .png, .jpg, .mov, or .mp4 files.");
-                        }
-                      }
-                    }}
+                    onChange={(e) => handleUploadChange(e, `video${video.id}`)}
                   />
                 </label>
               ))}
-              <p className="text-gray-400 text-sm text-center">Formats accepted are .png, .jpg, .mov, and .mp4</p>
+              <p className="text-gray-400 text-sm text-center">Formats accepted .mov or .mp4</p>
             </div>
 
-
-            <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-md py-3 font-semibold">
-              Send it to the moon
+            <Button
+              onClick={handleSendToMoon}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-md py-3 font-semibold"
+              disabled={loading}
+            >
+              {loading ? <span className="animate-spin">↻</span> : "Send it to the moon 🚀"}
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="w-full bg-white/10 rounded-2xl p-6 border border-white/10 flex flex-col gap-4">
+        <Card ref={videoRef} className="w-full bg-white/10 rounded-2xl p-6 border border-white/10 flex flex-col gap-4">
           <CardContent className="flex flex-col gap-4 p-0">
-            <p className="text-sm text-white opacity-70 text-left">
-              Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud
-            </p>
-
-            <div className="w-full h-48 bg-cover bg-center flex items-center justify-center border border-white/20 rounded-md bg-[url(https://c.animaapp.com/8qlqSYIl/img/card-image-mask@2x.png)]">
-              <div className="w-12 h-12 relative">
-                <img src="https://c.animaapp.com/8qlqSYIl/img/filled-play.svg" alt="Play" className="absolute top-2 left-2 w-8 h-8" />
-              </div>
-            </div>
-
-            <CardFooter className="flex justify-between items-center p-0">
-              <div className="flex gap-2">
-                {actionIcons.map((item, index) => (
-                  <Button key={index} size="icon" variant="ghost" className="w-7 h-7">
-                    {item.icon}
-                  </Button>
-                ))}
-              </div>
-              <Badge className="text-xs bg-white text-black rounded-full px-2 py-1">32 tokens</Badge>
-            </CardFooter>
+            {videoUrl ? (
+              <video src={videoUrl} controls autoPlay loop className="rounded-md w-full" />
+            ) : (
+              <p className="text-sm text-white opacity-70 text-left">
+                Your generated transition video will appear here once ready.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
