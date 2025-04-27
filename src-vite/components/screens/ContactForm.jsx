@@ -72,13 +72,14 @@ export const ContactForm = () => {
             <Textarea placeholder="Prompt" className="bg-white/10 border border-white/20 text-white rounded-md p-3" />
 
             <div className="text-left">
-              <p className="text-xs text-white">Duration: sec.00:03-00:10</p>
+              <p className="text-xs text-white">Duration: sec.00:{duration < 10 ? `0${duration}` : duration}</p>
               <input
                 type="range"
-                min="3"
-                max="10"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
+                min="0"
+                max="1"
+                step="1"
+                value={duration === 5 ? 0 : 1}
+                onChange={(e) => setDuration(e.target.value === "0" ? 5 : 9)}
                 className="w-full mt-2 accent-purple-500"
               />
             </div>
