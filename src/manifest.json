@@ -1,0 +1,21 @@
+{
+    "testId": "59091555-ad6b-41a2-893f-710d9bb77f4b",
+    "name": "Cineflowreal",
+    "version": "1.0.0",
+    "manifestVersion": 2,
+    "requirements": {
+        "apps": [
+            {
+                "name": "Express",
+                "apiVersion": 1
+            }
+        ]
+    },
+    "entryPoints": [
+        {
+            "type": "panel",
+            "id": "panel1",
+            "main": "index.html"
+        }
+    ]
+}
