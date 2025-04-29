@@ -150,13 +150,13 @@ def predict(img_tensor):
     return onehot2label[pdf.argmax()], pdf.max()
 
 cloudinary.config(
-    cloud_name='dhxb6439h',
-    api_key='511144413344935',
-    api_secret='yMgQRS5hMF7xu2ZVFaGZ3Jhhdk8',
+    cloud_name='YOUR_CLOUD_NAME',
+    api_key='YOUR_API_KEY',
+    api_secret='YOUR_API_SECRET',
     secure=True
 )
 
-LUMA_API_KEY = "luma-25f62ea8-34d5-42b6-ae9f-32a7ed2cad76-1d79042c-cdf4-4b57-8a25-8b946245180f"
+LUMA_API_KEY = "YOUR_LUMA_API_KEY"
 
 
 def extract_and_upload_frames(video1_path, video2_path):

@@ -30,6 +30,9 @@ export const ContactForm = () => {
   const [loading, setLoading] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
   const videoRef = useRef(null);
+  // State to store and display the names of uploaded video files
+  const [fileNames, setFileNames] = useState({ video1: '', video2: '' });
+  const [error, setError] = useState(null);
 
   const videoUploadCards = [
     { id: 1, label: "Video 1" },
@@ -44,23 +47,36 @@ export const ContactForm = () => {
     { icon: <MoreHorizontalIcon className="w-4 h-4" />, alt: "More" },
   ];
 
+  const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+
   const handleUploadChange = (e, videoKey) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        alert("File too large. Maximum size is 100MB.");
+        return;
+      }
       const validTypes = ["video/mp4", "video/quicktime"];
       if (validTypes.includes(file.type)) {
         setUploadedFiles((prev) => ({ ...prev, [videoKey]: file }));
+        // Update the file name display when a new file is uploaded
+        setFileNames(prev => ({ ...prev, [videoKey]: file.name }));
       } else {
         alert("Invalid file type. Please upload .mov or .mp4 files.");
       }
     }
   };
 
-  const handleSendToMoon = async () => {
+  const validateInputs = () => {
     if (!uploadedFiles.video1 || !uploadedFiles.video2) {
-      alert("Please upload both files!");
-      return;
+      setError("Please upload both videos");
+      return false;
     }
+    return true;
+  };
+
+  const handleSendToMoon = async () => {
+    if (!validateInputs()) return;
 
     const formData = new FormData();
     formData.append('file1', uploadedFiles.video1);
@@ -180,7 +196,8 @@ export const ContactForm = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        <p className="text-sm text-white opacity-70">Uploaded Successfully!</p>
+                        {/* Display the filename of the uploaded video */}
+                        <p className="text-sm text-white opacity-70">{fileNames[`video${video.id}`]}</p>
                       </div>
                     ) : (
                       <>
